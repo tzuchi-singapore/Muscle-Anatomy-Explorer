@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Muscle Anatomy — Degeneration Explorer</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=DM+Sans:wght@300;400;500&display=swap');
+
+:root {
+–bg: #0d1117;
+–panel: #131920;
+–border: #1e2d3d;
+–accent: #c8965a;
+–accent2: #e8b87a;
+–text: #d4cfc8;
+–muted: #6b7c8f;
+–healthy: #4caf7d;
+–mild: #f5c842;
+–moderate: #f59342;
+–severe: #e05c3a;
+–critical: #c0392b;
+–highlight: rgba(200,150,90,0.18);
+}
+
+- { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+font-family: ‘DM Sans’, sans-serif;
+background: var(–bg);
+color: var(–text);
+min-height: 100vh;
+display: flex;
+flex-direction: column;
+}
+
+header {
+display: flex;
+align-items: center;
+justify-content: space-between;
+padding: 18px 36px;
+border-bottom: 1px solid var(–border);
+background: var(–panel);
+}
+
+header h1 {
+font-family: ‘Cormorant Garamond’, serif;
+font-weight: 300;
+font-size: 1.6rem;
+letter-spacing: 0.06em;
+color: var(–accent2);
+}
+
+header p {
+font-size: 0.78rem;
+color: var(–muted);
+margin-top: 2px;
+}
+
+.badge {
+background: var(–accent);
+color: #1a1008;
+font-size: 0.7rem;
+font-weight: 500;
+padding: 4px 10px;
+border-radius: 20px;
+letter-spacing: 0.05em;
+}
+
+.main {
+display: flex;
+flex: 1;
+overflow: hidden;
+}
+
+/* LEFT PANEL - Body viewer */
+.body-panel {
+width: 400px;
+min-width: 340px;
+border-right: 1px solid var(–border);
+display: flex;
+flex-direction: column;
+align-items: center;
+padding: 24px 16px;
+background: var(–panel);
+position: relative;
+}
+
+.view-toggle {
+display: flex;
+background: var(–bg);
+border-radius: 8px;
+padding: 3px;
+margin-bottom: 20px;
+border: 1px solid var(–border);
+}
+
+.view-toggle button {
+padding: 7px 22px;
+border: none;
+background: none;
+color: var(–muted);
+font-family: ‘DM Sans’, sans-serif;
+font-size: 0.82rem;
+cursor: pointer;
+border-radius: 6px;
+transition: all 0.2s;
+letter-spacing: 0.04em;
+}
+
+.view-toggle button.active {
+background: var(–accent);
+color: #1a1008;
+font-weight: 500;
+}
+
+.body-container {
+position: relative;
+width: 100%;
+max-width: 340px;
+flex: 1;
+display: flex;
+justify-content: center;
+align-items: flex-start;
+}
+
+.body-img {
+width: 100%;
+object-fit: contain;
+border-radius: 8px;
+display: block;
+filter: brightness(0.9) contrast(1.05);
+max-height: calc(100vh - 220px);
+}
+
+.muscle-overlay {
+position: absolute;
+top: 0; left: 0; right: 0; bottom: 0;
+pointer-events: none;
+}
+
+.muscle-hotspot {
+position: absolute;
+cursor: pointer;
+border-radius: 50%;
+background: rgba(200,150,90,0.0);
+border: 2px solid transparent;
+transition: all 0.2s;
+pointer-events: all;
+display: flex;
+align-items: center;
+justify-content: center;
+}
+
+.muscle-hotspot:hover, .muscle-hotspot.active {
+background: rgba(200,150,90,0.22);
+border-color: var(–accent);
+}
+
+.muscle-hotspot.active {
+background: rgba(200,150,90,0.35);
+box-shadow: 0 0 18px rgba(200,150,90,0.45);
+}
+
+.hotspot-label {
+position: absolute;
+font-size: 0.6rem;
+color: var(–accent2);
+white-space: nowrap;
+pointer-events: none;
+font-weight: 500;
+text-shadow: 0 1px 4px #000;
+letter-spacing: 0.03em;
+}
+
+/* RIGHT PANEL */
+.info-panel {
+flex: 1;
+overflow-y: auto;
+padding: 28px 32px;
+display: flex;
+flex-direction: column;
+gap: 20px;
+}
+
+.welcome-card {
+background: var(–panel);
+border: 1px solid var(–border);
+border-radius: 12px;
+padding: 28px;
+text-align: center;
+flex: 1;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+gap: 14px;
+}
+
+.welcome-card .icon { font-size: 3rem; }
+
+.welcome-card h2 {
+font-family: ‘Cormorant Garamond’, serif;
+font-weight: 400;
+font-size: 1.5rem;
+color: var(–accent2);
+}
+
+.welcome-card p {
+color: var(–muted);
+font-size: 0.88rem;
+line-height: 1.7;
+max-width: 380px;
+}
+
+.muscle-detail { display: none; flex-direction: column; gap: 18px; }
+.muscle-detail.visible { display: flex; }
+
+.muscle-header {
+background: var(–panel);
+border: 1px solid var(–border);
+border-left: 3px solid var(–accent);
+border-radius: 8px;
+padding: 18px 22px;
+}
+
+.muscle-header h2 {
+font-family: ‘Cormorant Garamond’, serif;
+font-size: 1.7rem;
+font-weight: 400;
+color: var(–accent2);
+}
+
+.muscle-header .group-tag {
+display: inline-block;
+font-size: 0.72rem;
+color: var(–muted);
+background: var(–bg);
+border: 1px solid var(–border);
+border-radius: 4px;
+padding: 2px 8px;
+margin-top: 6px;
+letter-spacing: 0.05em;
+text-transform: uppercase;
+}
+
+.muscle-header .function-text {
+font-size: 0.85rem;
+color: var(–text);
+margin-top: 10px;
+line-height: 1.6;
+}
+
+/* Degeneration slider */
+.slider-section {
+background: var(–panel);
+border: 1px solid var(–border);
+border-radius: 12px;
+padding: 22px;
+}
+
+.slider-section h3 {
+font-size: 0.78rem;
+text-transform: uppercase;
+letter-spacing: 0.1em;
+color: var(–muted);
+margin-bottom: 16px;
+}
+
+.stage-labels {
+display: flex;
+justify-content: space-between;
+margin-bottom: 10px;
+font-size: 0.7rem;
+color: var(–muted);
+}
+
+.slider-track {
+position: relative;
+height: 8px;
+border-radius: 4px;
+background: linear-gradient(to right, var(–healthy), var(–mild), var(–moderate), var(–severe), var(–critical));
+margin-bottom: 6px;
+}
+
+input[type=range] {
+width: 100%;
+-webkit-appearance: none;
+appearance: none;
+background: transparent;
+height: 8px;
+cursor: pointer;
+outline: none;
+}
+
+input[type=range]::-webkit-slider-thumb {
+-webkit-appearance: none;
+width: 22px;
+height: 22px;
+border-radius: 50%;
+background: #fff;
+border: 3px solid var(–accent);
+cursor: pointer;
+box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+transition: transform 0.15s;
+margin-top: -7px;
+}
+
+input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.15); }
+input[type=range]::-webkit-slider-runnable-track {
+height: 8px;
+border-radius: 4px;
+background: linear-gradient(to right, var(–healthy), var(–mild), var(–moderate), var(–severe), var(–critical));
+}
+
+.stage-indicator {
+display: flex;
+align-items: center;
+gap: 10px;
+margin-top: 14px;
+padding: 10px 14px;
+border-radius: 8px;
+border: 1px solid var(–border);
+background: var(–bg);
+}
+
+.stage-dot {
+width: 12px;
+height: 12px;
+border-radius: 50%;
+flex-shrink: 0;
+}
+
+.stage-name {
+font-weight: 500;
+font-size: 0.9rem;
+}
+
+/* Effects cascade */
+.effects-card {
+background: var(–panel);
+border: 1px solid var(–border);
+border-radius: 12px;
+padding: 22px;
+}
+
+.effects-card h3 {
+font-size: 0.78rem;
+text-transform: uppercase;
+letter-spacing: 0.1em;
+color: var(–muted);
+margin-bottom: 16px;
+display: flex;
+align-items: center;
+gap: 8px;
+}
+
+.effects-card h3 span { color: var(–accent); }
+
+.loading-ring {
+display: none;
+width: 18px; height: 18px;
+border: 2px solid var(–border);
+border-top-color: var(–accent);
+border-radius: 50%;
+animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.effect-timeline { display: flex; flex-direction: column; gap: 12px; }
+
+.effect-item {
+display: flex;
+gap: 14px;
+align-items: flex-start;
+opacity: 0;
+transform: translateX(-8px);
+transition: all 0.35s;
+}
+
+.effect-item.show {
+opacity: 1;
+transform: none;
+}
+
+.effect-icon {
+width: 36px; height: 36px;
+border-radius: 8px;
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: 1.1rem;
+flex-shrink: 0;
+}
+
+.effect-icon.local { background: rgba(200,150,90,0.15); }
+.effect-icon.regional { background: rgba(229,115,80,0.15); }
+.effect-icon.systemic { background: rgba(192,57,43,0.15); }
+
+.effect-text { flex: 1; }
+.effect-text strong {
+display: block;
+font-size: 0.88rem;
+color: var(–accent2);
+margin-bottom: 3px;
+}
+
+.effect-text p {
+font-size: 0.82rem;
+color: var(–muted);
+line-height: 1.55;
+}
+
+/* Body highlight overlay during effects */
+.body-region-highlight {
+position: absolute;
+border-radius: 50%;
+pointer-events: none;
+animation: pulse-region 2s ease-in-out infinite;
+opacity: 0;
+transition: opacity 0.5s;
+}
+
+.body-region-highlight.show { opacity: 1; }
+
+@keyframes pulse-region {
+0%, 100% { transform: scale(1); opacity: 0.6; }
+50% { transform: scale(1.12); opacity: 1; }
+}
+
+/* Visual body scan */
+.body-status-bar {
+display: flex;
+gap: 8px;
+flex-wrap: wrap;
+margin-top: 4px;
+}
+
+.status-chip {
+font-size: 0.7rem;
+padding: 4px 10px;
+border-radius: 20px;
+background: var(–bg);
+border: 1px solid var(–border);
+color: var(–muted);
+display: flex;
+align-items: center;
+gap: 5px;
+}
+
+.status-chip .dot {
+width: 7px; height: 7px;
+border-radius: 50%;
+}
+
+.scroll-hint {
+text-align: center;
+font-size: 0.72rem;
+color: var(–muted);
+padding: 8px;
+opacity: 0.6;
+}
+
+.disclaimer {
+font-size: 0.72rem;
+color: var(–muted);
+padding: 12px 16px;
+border: 1px solid var(–border);
+border-radius: 8px;
+background: var(–bg);
+line-height: 1.6;
+opacity: 0.8;
+}
+
+/* Degeneration visual on body image */
+.degen-overlay {
+position: absolute;
+pointer-events: none;
+border-radius: 50%;
+mix-blend-mode: multiply;
+transition: all 0.6s ease;
+}
+
+.instructions {
+padding: 8px 0;
+font-size: 0.8rem;
+color: var(–muted);
+text-align: center;
+opacity: 0.8;
+}
+
+.instructions span { color: var(–accent); }
+
+@media (max-width: 700px) {
+.main { flex-direction: column; }
+.body-panel { width: 100%; min-width: 0; border-right: none; border-bottom: 1px solid var(–border); padding: 16px 8px; }
+.body-img { max-height: 50vh; }
+.info-panel { padding: 18px 14px; }
+}
+</style>
+
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Muscle Anatomy Explorer</h1>
+    <p>Senior Wellness Education — Tzu-Chi Fitness Centres</p>
+  </div>
+  <span class="badge">LONGEVITY COURTYARD</span>
+</header>
+
+<div class="main">
+
+  <!-- LEFT: Body viewer -->
+
+  <div class="body-panel">
+    <div class="view-toggle">
+      <button class="active" onclick="setView('front')">Front View</button>
+      <button onclick="setView('back')">Back View</button>
+    </div>
+
+```
+<div class="instructions">Click on a <span>muscle region</span> to explore</div>
+
+<div class="body-container" id="bodyContainer">
+  <img id="bodyImg" class="body-img" src="/mnt/user-data/uploads/front_muscle_anatomy.png" alt="Front muscle anatomy">
+
+  <!-- SVG hotspot overlay -->
+  <svg id="hotspotSvg" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:all;" viewBox="0 0 340 900" preserveAspectRatio="xMidYMid meet">
+    <!-- Front view hotspots - will be shown/hidden by JS -->
+    <g id="frontHotspots">
+      <!-- Neck -->
+      <ellipse cx="170" cy="100" rx="28" ry="18" fill="rgba(200,150,90,0)" stroke="transparent" class="muscle-spot" data-id="sternocleidomastoid" data-view="front" style="cursor:pointer"/>
+      <!-- Chest -->
+      <ellipse cx="155" cy="195" rx="48" ry="35" fill="rgba(200,150,90,0)" stroke="transparent" class="muscle-spot" data-id="pectoralis_major" data-view="front" style="cursor:pointer"/>
+      <!-- Abs -->
+      <ellipse cx="170" cy="295" rx="32" ry="52" fill="rgba(200,150,90,0)" stroke="transparent" class="muscle-spot" data-id="rectus_abdominis" data-view="front" style="cursor:pointer"/>
+      <!-- Left shoulder -->
+      <ellipse cx="95" cy="185" rx="30" ry="22" fill="rgba(200,150,90,0)" stroke="transparent" class="muscle-spot" data-id="anterior_deltoid" data-view="front" style="cursor:pointer"/>
+      <!-- Right quad -->
+      <ellipse cx="145" cy="560" rx="38" ry="65" fill="rgba(200,150,90,0)" stroke="transparent" class="muscle-spot" data-id="quadriceps" data-view="front" style="cursor:pointer"/>
+      <!-- Hip/groin -->
+      <ellipse cx="200" cy="430" rx="30" ry="30" fill="rgba(200,150,90,0)" stroke="transparent" class="muscle-spot" data-id="iliopsoas" data-view="front" style="cursor:pointer"/>
+      <!-- Biceps -->
+      <ellipse cx="95" cy="265" rx="20" ry="35" fill="rgba(200,150,90,0)" stroke="transparent" class="muscle-spot" data-id="biceps" data-view="front" style="cursor:pointer"/>
+      <!-- Tibialis -->
+      <ellipse cx="145" cy="720" rx="22" ry="45" fill="rgba(200,150,90,0)" stroke="transparent" class="muscle-spot" data-id="tibialis_anterior" data-view="front" style="cursor:pointer"/>
+      <!-- Adductors -->
+      <ellipse cx="190" cy="545" rx="28" ry="55" fill="rgba(200,150,90,0)" stroke="transparent" class="muscle-spot" data-id="adductors" data-view="front" style="cursor:pointer"/>
+      <!-- Obliques -->
+      <ellipse cx="110" cy="300" rx="24" ry="40" fill="rgba(200,150,90,0)" stroke="transparent" class="muscle-spot" data-id="obliques" data-view="front" style="cursor:pointer"/>
+    </g>
+
+    <g id="backHotspots" style="display:none">
+      <!-- Trapezius -->
+      <ellipse cx="170" cy="145" rx="60" ry="40" fill="rgba(200,150,90,0)" stroke="transparent" class="muscle-spot" data-id="trapezius" data-view="back" style="cursor:pointer"/>
+      <!-- Lower back / Erector Spinae -->
+      <ellipse cx="170" cy="330" rx="35" ry="70" fill="rgba(200,150,90,0)" stroke="transparent" class="muscle-spot" data-id="erector_spinae" data-view="back" style="cursor:pointer"/>
+      <!-- Glutes -->
+      <ellipse cx="170" cy="465" rx="55" ry="50" fill="rgba(200,150,90,0)" stroke="transparent" class="muscle-spot" data-id="gluteus_maximus" data-view="back" style="cursor:pointer"/>
+      <!-- Hamstrings -->
+      <ellipse cx="155" cy="580" rx="38" ry="60" fill="rgba(200,150,90,0)" stroke="transparent" class="muscle-spot" data-id="hamstrings" data-view="back" style="cursor:pointer"/>
+      <!-- Rhomboids -->
+      <ellipse cx="170" cy="210" rx="48" ry="30" fill="rgba(200,150,90,0)" stroke="transparent" class="muscle-spot" data-id="rhomboids" data-view="back" style="cursor:pointer"/>
+      <!-- Posterior deltoid -->
+      <ellipse cx="95" cy="195" rx="28" ry="22" fill="rgba(200,150,90,0)" stroke="transparent" class="muscle-spot" data-id="posterior_deltoid" data-view="back" style="cursor:pointer"/>
+      <!-- Triceps -->
+      <ellipse cx="95" cy="280" rx="20" ry="38" fill="rgba(200,150,90,0)" stroke="transparent" class="muscle-spot" data-id="triceps" data-view="back" style="cursor:pointer"/>
+      <!-- Gastrocnemius -->
+      <ellipse cx="150" cy="720" rx="26" ry="50" fill="rgba(200,150,90,0)" stroke="transparent" class="muscle-spot" data-id="gastrocnemius" data-view="back" style="cursor:pointer"/>
+      <!-- QL -->
+      <ellipse cx="200" cy="340" rx="22" ry="35" fill="rgba(200,150,90,0)" stroke="transparent" class="muscle-spot" data-id="quadratus_lumborum" data-view="back" style="cursor:pointer"/>
+      <!-- Latissimus dorsi -->
+      <ellipse cx="115" cy="280" rx="32" ry="50" fill="rgba(200,150,90,0)" stroke="transparent" class="muscle-spot" data-id="latissimus_dorsi" data-view="back" style="cursor:pointer"/>
+    </g>
+
+    <!-- Degeneration glow overlay -->
+    <ellipse id="degenGlow" cx="0" cy="0" rx="0" ry="0" fill="rgba(200,80,40,0)" style="pointer-events:none; transition: all 0.5s;"/>
+    <!-- Cascade highlight spots -->
+    <g id="cascadeSpots"></g>
+  </svg>
+</div>
+```
+
+  </div>
+
+  <!-- RIGHT: Info panel -->
+
+  <div class="info-panel">
+
+```
+<!-- Welcome state -->
+<div class="welcome-card" id="welcomeCard">
+  <div class="icon">🫀</div>
+  <h2>Select a Muscle Group</h2>
+  <p>Tap any highlighted region on the body diagram to learn how that muscle works, and what happens when it begins to degenerate over time.</p>
+  <br>
+  <div class="body-status-bar" style="justify-content:center">
+    <div class="status-chip"><span class="dot" style="background:var(--healthy)"></span> Healthy</div>
+    <div class="status-chip"><span class="dot" style="background:var(--mild)"></span> Mild</div>
+    <div class="status-chip"><span class="dot" style="background:var(--moderate)"></span> Moderate</div>
+    <div class="status-chip"><span class="dot" style="background:var(--severe)"></span> Severe</div>
+    <div class="status-chip"><span class="dot" style="background:var(--critical)"></span> Critical</div>
+  </div>
+</div>
+
+<!-- Muscle detail state -->
+<div class="muscle-detail" id="muscleDetail">
+
+  <div class="muscle-header">
+    <h2 id="muscleName">—</h2>
+    <span class="group-tag" id="muscleGroup">—</span>
+    <p class="function-text" id="muscleFunction">—</p>
+  </div>
+
+  <div class="slider-section">
+    <h3>Degeneration Stage</h3>
+    <div class="stage-labels">
+      <span>Healthy</span>
+      <span>Mild</span>
+      <span>Moderate</span>
+      <span>Severe</span>
+      <span>Critical</span>
+    </div>
+    <input type="range" id="degenSlider" min="0" max="4" step="1" value="0" oninput="onSliderChange(this.value)">
+    <div class="stage-indicator" id="stageIndicator">
+      <div class="stage-dot" id="stageDot" style="background:var(--healthy)"></div>
+      <span class="stage-name" id="stageName">Stage 0 — Healthy Muscle</span>
+    </div>
+  </div>
+
+  <div class="effects-card">
+    <h3>
+      <span>⚡</span> Cascade Effects
+      <div class="loading-ring" id="loadingRing"></div>
+    </h3>
+    <div class="effect-timeline" id="effectTimeline">
+      <p style="color:var(--muted);font-size:0.85rem;">Move the slider to see what happens…</p>
+    </div>
+  </div>
+
+  <div class="disclaimer">
+    ⚕️ This tool is for educational purposes only. Always consult a qualified physiotherapist or physician for personal medical advice.
+  </div>
+
+</div>
+```
+
+  </div>
+</div>
+
+<script>
+const MUSCLE_DATA = {
+  // FRONT VIEW
+  sternocleidomastoid: {
+    name: "Sternocleidomastoid",
+    group: "Head & Neck",
+    function: "Rotates and tilts the head. Assists in breathing by lifting the sternum. Critical for maintaining head-neck alignment during posture.",
+    cascades: [
+      [ // Stage 0 - healthy
+        { icon: "✅", type: "local", title: "Healthy Neck Rotation", text: "Full range of neck rotation and tilt. Head sits evenly balanced on the cervical spine." }
+      ],
+      [ // Stage 1 - mild
+        { icon: "⚠️", type: "local", title: "Mild Neck Tightness", text: "One side begins to feel tight or pull. Slight discomfort when turning the head fully." },
+        { icon: "🔄", type: "regional", title: "Upper Trapezius Compensates", text: "The upper trapezius starts overworking to assist neck movement, causing shoulder elevation and tension." }
+      ],
+      [ // Stage 2 - moderate
+        { icon: "↩️", type: "local", title: "Head Tilt Develops", text: "Head begins to tilt toward the tighter side. The chin may rotate slightly in the opposite direction." },
+        { icon: "😬", type: "regional", title: "Jaw & TMJ Stress", text: "Uneven head position stresses the temporomandibular joint, potentially causing jaw pain or clicking." },
+        { icon: "🧠", type: "regional", title: "Reduced Blood Flow to Brain", text: "Compression around the neck can slightly reduce vertebral artery blood flow, causing dizziness or headaches." }
+      ],
+      [ // Stage 3 - severe
+        { icon: "🦴", type: "local", title: "Cervical Scoliosis Risk", text: "Sustained head tilt places asymmetric load on cervical vertebrae, beginning structural change in the neck." },
+        { icon: "🫁", type: "regional", title: "Breathing Efficiency Reduced", text: "This muscle assists inhalation by lifting the sternum. Weakness reduces chest expansion, causing shallow breathing." },
+        { icon: "⚡", type: "systemic", title: "Vestibular System Disrupted", text: "The inner ear relies on proper head position signals. Chronic head tilt confuses balance centres, increasing fall risk." }
+      ],
+      [ // Stage 4 - critical
+        { icon: "🚨", type: "systemic", title: "Torticollis (Wry Neck)", text: "The head is locked in a rotated or tilted position. Severe pain and extreme limitation in range of motion." },
+        { icon: "🧠", type: "systemic", title: "Cognitive & Neurological Impact", text: "Sustained neck compression and poor positioning can impair cerebral blood flow, contributing to cognitive fog and fatigue in seniors." },
+        { icon: "🦽", type: "systemic", title: "Fall Risk Greatly Increased", text: "Loss of proper head-righting reflex and proprioception severely compromises balance and safe mobility." }
+      ]
+    ],
+    hotspot: { cx: 170, cy: 100, rx: 28, ry: 18 }
+  },
+
+  pectoralis_major: {
+    name: "Pectoralis Major",
+    group: "Chest",
+    function: "Pulls the arms across the body and rotates them inward. A major muscle for pushing movements and shoulder stability.",
+    cascades: [
+      [{ icon: "✅", type: "local", title: "Strong Chest & Shoulder Function", text: "Full pushing strength, proper arm movement, and upright shoulder posture maintained." }],
+      [
+        { icon: "⚠️", type: "local", title: "Chest Tightness", text: "The pec begins to tighten and shorten, pulling the shoulders slightly forward." },
+        { icon: "🔄", type: "regional", title: "Anterior Shoulder Rounding", text: "Shoulders round forward as the tight pec dominates over weakening back muscles." }
+      ],
+      [
+        { icon: "↩️", type: "local", title: "Rounded Upper Back (Kyphosis Begins)", text: "Persistent forward shoulder pull increases the curve of the upper spine, contributing to a hunched posture." },
+        { icon: "💪", type: "regional", title: "Rhomboid & Mid-Trap Weakness", text: "The upper back muscles become overstretched and weak, unable to counterbalance the tight chest." }
+      ],
+      [
+        { icon: "🫁", type: "regional", title: "Compressed Lung Capacity", text: "Forward head and rounded shoulders reduce the space for lung expansion, decreasing breathing efficiency." },
+        { icon: "🦴", type: "regional", title: "Rotator Cuff Under Strain", text: "Shoulder blade mispositioning impinges the rotator cuff, causing shoulder pain and limited arm lifting." }
+      ],
+      [
+        { icon: "🚨", type: "systemic", title: "Severe Kyphotic Posture", text: "Extreme forward head posture. For every 2.5cm the head protrudes, the neck must carry an extra 4–5kg of load." },
+        { icon: "🧠", type: "systemic", title: "Neck & Neural Compression", text: "Severe forward head posture compresses cervical nerves, causing numbness, tingling, or weakness in arms and hands." }
+      ]
+    ],
+    hotspot: { cx: 155, cy: 195, rx: 48, ry: 35 }
+  },
+
+  rectus_abdominis: {
+    name: "Rectus Abdominis",
+    group: "Abdomen & Core",
+    function: "Flexes the trunk forward. Critical for core stability, protecting the lumbar spine, and maintaining upright posture.",
+    cascades: [
+      [{ icon: "✅", type: "local", title: "Stable Core & Spine", text: "Strong abdominal bracing protects the lower back and keeps the pelvis in neutral alignment." }],
+      [
+        { icon: "⚠️", type: "local", title: "Reduced Core Stability", text: "The ability to brace and stiffen the trunk begins to decline, increasing spinal load with daily activities." },
+        { icon: "🔄", type: "regional", title: "Hip Flexors Compensate", text: "The iliopsoas and hip flexors overwork to assist trunk control, creating tightness at the front of the hips." }
+      ],
+      [
+        { icon: "↩️", type: "local", title: "Anterior Pelvic Tilt", text: "Without core support, the pelvis tips forward, increasing the lumbar curve (lordosis) and compressing lumbar discs." },
+        { icon: "😬", type: "regional", title: "Lower Back Pain", text: "Lumbar muscles become overloaded carrying the load the abdominals no longer share, leading to chronic ache." }
+      ],
+      [
+        { icon: "🦴", type: "regional", title: "Lumbar Disc Compression", text: "Increased lordosis compresses posterior disc structures, raising the risk of disc bulge or nerve impingement at L4-L5." },
+        { icon: "⚖️", type: "regional", title: "Knee Loading Increases", text: "Anterior pelvic tilt shifts the body's centre of gravity forward, increasing compressive forces on the knee joint." }
+      ],
+      [
+        { icon: "🚨", type: "systemic", title: "Global Postural Collapse", text: "Without core stability, compensatory patterns cascade through the hips, knees, and ankles, accelerating whole-body degeneration." },
+        { icon: "🦽", type: "systemic", title: "High Fall Risk", text: "Loss of trunk control and reflexive bracing dramatically increases fall risk during transitions like sitting to standing." }
+      ]
+    ],
+    hotspot: { cx: 170, cy: 295, rx: 32, ry: 52 }
+  },
+
+  anterior_deltoid: {
+    name: "Anterior Deltoid",
+    group: "Shoulder",
+    function: "Raises the arm forward (flexion) and assists in internal rotation. Works closely with the pectoralis major.",
+    cascades: [
+      [{ icon: "✅", type: "local", title: "Full Shoulder Flexion", text: "Arm can be raised fully overhead with ease. Shoulder joint sits in proper neutral position." }],
+      [
+        { icon: "⚠️", type: "local", title: "Front Shoulder Weakness", text: "Difficulty lifting objects to shoulder height or reaching forward. Activities like carrying bags become harder." }
+      ],
+      [
+        { icon: "↩️", type: "regional", title: "Rotator Cuff Overload", text: "Supraspinatus and other rotator cuff muscles compensate, increasing their injury risk significantly." },
+        { icon: "🔄", type: "regional", title: "Upper Trapezius Takes Over", text: "The shoulder elevates during arm lifting as the trap compensates, causing neck and shoulder tension." }
+      ],
+      [
+        { icon: "💥", type: "regional", title: "Shoulder Impingement Syndrome", text: "Abnormal shoulder mechanics create pinching of soft tissues in the shoulder joint space with every arm lift." }
+      ],
+      [
+        { icon: "🚨", type: "systemic", title: "Loss of Arm Independence", text: "Inability to lift arms for basic tasks (reaching shelves, dressing, bathing) significantly impacts daily independence." }
+      ]
+    ],
+    hotspot: { cx: 95, cy: 185, rx: 30, ry: 22 }
+  },
+
+  quadriceps: {
+    name: "Quadriceps",
+    group: "Upper Leg (Front)",
+    function: "Extends the knee and helps flex the hip. The primary muscle for standing up from a chair, climbing stairs, and walking.",
+    cascades: [
+      [{ icon: "✅", type: "local", title: "Strong Knee Extension", text: "Rising from chairs, stair-climbing, and walking are effortless. Knee joint is well-protected." }],
+      [
+        { icon: "⚠️", type: "local", title: "Knee Feels Weak Going Down Stairs", text: "Eccentric control (braking while descending) declines first. Seniors begin avoiding stairs or holding railings more." },
+        { icon: "🔄", type: "regional", title: "Hamstrings Over-Tighten", text: "As the quad weakens, the hamstring dominates, pulling the knee into slight flexion even at rest." }
+      ],
+      [
+        { icon: "↩️", type: "local", title: "Patellofemoral Pain (Knee Cap)", text: "The kneecap no longer tracks smoothly in its groove. Pain develops under or around the kneecap with activity." },
+        { icon: "🔄", type: "regional", title: "Hip Muscles Compensate", text: "Gluteus medius and TFL overwork to stabilise the leg, often leading to outer hip and IT band tightness." }
+      ],
+      [
+        { icon: "🦴", type: "regional", title: "Accelerated Knee Osteoarthritis", text: "Quad weakness is the #1 predictor of knee OA progression. Joint cartilage wears faster without muscular protection." },
+        { icon: "⚖️", type: "regional", title: "Valgus Collapse (Knee Falls Inward)", text: "Weakened quad-VMO allows the knee to cave inward during walking, stressing the medial ligament and meniscus." }
+      ],
+      [
+        { icon: "🚨", type: "systemic", title: "Chair-Rise Failure", text: "Unable to rise from a standard chair without arm push. This is a key functional independence threshold in seniors." },
+        { icon: "🦽", type: "systemic", title: "High Fall Risk & Mobility Loss", text: "Combination of knee instability, pain, and weakness dramatically increases fall risk and limits community mobility." }
+      ]
+    ],
+    hotspot: { cx: 145, cy: 560, rx: 38, ry: 65 }
+  },
+
+  iliopsoas: {
+    name: "Iliopsoas",
+    group: "Hip & Groin",
+    function: "The primary hip flexor. Lifts the thigh toward the chest. Crucial for walking, stair-climbing, and trunk stability from below.",
+    cascades: [
+      [{ icon: "✅", type: "local", title: "Normal Hip Flexion", text: "Walking stride is full and confident. No restriction bringing the knee up. Lumbar spine in neutral." }],
+      [
+        { icon: "⚠️", type: "local", title: "Shortened, Tight Hip Flexor", text: "The muscle tightens from prolonged sitting. A pulling sensation at the front of the hip when standing upright." },
+        { icon: "🔄", type: "regional", title: "Lumbar Lordosis Increases", text: "A tight iliopsoas pulls the lumbar spine into excessive arch, compressing posterior disc structures." }
+      ],
+      [
+        { icon: "↩️", type: "regional", title: "Anterior Pelvic Tilt", text: "The pelvis is pulled forward and down at the front, disrupting the entire kinetic chain from hip to shoulder." },
+        { icon: "😬", type: "regional", title: "Lower Back Pain & Disc Stress", text: "Lumbar muscles are overloaded compensating for the tight hip flexor. L4-L5 and L5-S1 discs are particularly at risk." }
+      ],
+      [
+        { icon: "🦴", type: "regional", title: "Asymmetric Walking Pattern", text: "If one side is tighter, gait becomes asymmetric — one hip hiking up, uneven arm swing, altered foot strike." },
+        { icon: "⚖️", type: "regional", title: "Knee & Ankle Compensation", text: "Pelvic tilt changes the line of force through the knee, causing medial knee stress and overpronation at the foot." }
+      ],
+      [
+        { icon: "🚨", type: "systemic", title: "Scoliotic Lean Develops", text: "One-sided tightness causes visible lean and spinal curvature that worsens with deconditioning." },
+        { icon: "🧠", type: "systemic", title: "Balance Centre Confused", text: "Asymmetric pelvis and spine tilt disrupts the body's proprioceptive signals to the brain, impairing balance and coordination." }
+      ]
+    ],
+    hotspot: { cx: 200, cy: 430, rx: 30, ry: 30 }
+  },
+
+  biceps: {
+    name: "Biceps Brachii",
+    group: "Upper Arm (Front)",
+    function: "Flexes the elbow and supinates the forearm (turns palm up). Key for lifting, carrying, and pulling tasks.",
+    cascades: [
+      [{ icon: "✅", type: "local", title: "Full Elbow Strength", text: "Can carry groceries, lift objects, and perform daily pulling tasks with ease." }],
+      [{ icon: "⚠️", type: "local", title: "Reduced Carry Strength", text: "Carrying bags or lifting objects at elbow height becomes noticeably harder. Forearm may cramp more easily." }],
+      [
+        { icon: "↩️", type: "regional", title: "Compensatory Shoulder Strain", text: "The shoulder deltoids and rotator cuff compensate to assist lifting, increasing joint stress." },
+        { icon: "🔄", type: "regional", title: "Brachialis Overworks", text: "The brachialis underneath compensates, but it lacks the strength for sustained loads." }
+      ],
+      [{ icon: "🦴", type: "regional", title: "Tendon Degeneration Risk", text: "Weakened biceps increase tensile stress on the biceps tendon at the shoulder and elbow, raising rupture risk in seniors." }],
+      [{ icon: "🚨", type: "systemic", title: "Loss of Daily Carry Function", text: "Inability to carry shopping or lift from low surfaces severely impacts independence and nutrition (shopping becomes hazardous)." }]
+    ],
+    hotspot: { cx: 95, cy: 265, rx: 20, ry: 35 }
+  },
+
+  tibialis_anterior: {
+    name: "Tibialis Anterior",
+    group: "Lower Leg (Front)",
+    function: "Lifts the foot (dorsiflexion). Crucial for clearing the ground during each walking step and controlling foot drop.",
+    cascades: [
+      [{ icon: "✅", type: "local", title: "Normal Foot Clearance", text: "Foot clears the ground cleanly with each step. No tripping. Smooth heel-to-toe gait pattern." }],
+      [
+        { icon: "⚠️", type: "local", title: "Foot Slap Gait", text: "The foot no longer lifts cleanly. A slapping sound on the floor occurs as the forefoot drops passively after heel strike." }
+      ],
+      [
+        { icon: "↩️", type: "local", title: "Toe Dragging Risk", text: "The toes may catch on carpet edges, uneven ground, or door thresholds — a leading cause of trips in seniors." },
+        { icon: "🔄", type: "regional", title: "Hip Flexion Compensates (Hip Hike)", text: "To clear the foot, seniors lift the entire hip on each step — an inefficient and exhausting compensation." }
+      ],
+      [
+        { icon: "🦴", type: "regional", title: "Ankle Instability", text: "Without strong dorsiflexion, ankle rolling and sprains become far more common on uneven surfaces." },
+        { icon: "⚖️", type: "regional", title: "Knee & Hip Overload", text: "Abnormal gait mechanics from foot drop dramatically increase loading on the knee and hip joints." }
+      ],
+      [
+        { icon: "🚨", type: "systemic", title: "Foot Drop Syndrome", text: "Inability to lift the foot at all. Walking requires a stick or foot brace. Outdoor mobility becomes extremely hazardous." },
+        { icon: "🦽", type: "systemic", title: "Fall Rate Doubles", text: "Foot drop is one of the strongest independent predictors of falls in older adults." }
+      ]
+    ],
+    hotspot: { cx: 145, cy: 720, rx: 22, ry: 45 }
+  },
+
+  adductors: {
+    name: "Adductors (Inner Thigh)",
+    group: "Hip & Groin",
+    function: "Pull the legs together and stabilise the pelvis during single-leg stance (walking). Key for lateral balance control.",
+    cascades: [
+      [{ icon: "✅", type: "local", title: "Stable Pelvis During Walking", text: "The pelvis remains level and stable as weight shifts from foot to foot. Inner thigh provides firm medial knee support." }],
+      [
+        { icon: "⚠️", type: "local", title: "Inner Thigh Tightness or Weakness", text: "One or both adductors become either tight or weak. Walking feels less smooth and lateral steps feel unstable." }
+      ],
+      [
+        { icon: "↩️", type: "regional", title: "Pelvic Drop (Trendelenburg Sign)", text: "During single-leg stance, the opposite hip drops, creating a waddling gait. This stresses the lumbar spine and hip." },
+        { icon: "🦴", type: "regional", title: "Medial Knee Stress", text: "The knee is pulled inward (valgus), stressing the medial compartment — the most common site of knee osteoarthritis." }
+      ],
+      [
+        { icon: "🔄", type: "regional", title: "Groin & Hip Flexor Pain", text: "Compensatory tightness develops in the groin, making it difficult to step sideways or rotate the leg outward." }
+      ],
+      [
+        { icon: "🚨", type: "systemic", title: "Lateral Balance Failure", text: "Lateral stepping and recovery from stumbles becomes severely impaired — the most critical balance skill for preventing hip fractures." }
+      ]
+    ],
+    hotspot: { cx: 190, cy: 545, rx: 28, ry: 55 }
+  },
+
+  obliques: {
+    name: "Obliques (External & Internal)",
+    group: "Abdomen & Core",
+    function: "Rotate and side-bend the trunk. Work as a stabilising corset around the spine to prevent excessive twisting under load.",
+    cascades: [
+      [{ icon: "✅", type: "local", title: "Rotational Trunk Stability", text: "Can twist, reach across the body, and resist forces from the side without lumbar strain." }],
+      [
+        { icon: "⚠️", type: "local", title: "Trunk Rotation Stiffness", text: "Turning to look behind when driving, reaching across the body, or rotating become laboured and stiff." }
+      ],
+      [
+        { icon: "↩️", type: "regional", title: "Lumbar Spine Unprotected Laterally", text: "Without oblique support, sideways bending motions place dangerous shear forces on lumbar discs." },
+        { icon: "🔄", type: "regional", title: "QL Overloads (Lower Back Pain)", text: "The quadratus lumborum compensates for oblique weakness, becoming chronically overworked and tight." }
+      ],
+      [
+        { icon: "🦴", type: "regional", title: "Lateral Spinal Instability", text: "The spine is at risk of lateral compression and rotational disc injury during everyday bending and twisting tasks." }
+      ],
+      [
+        { icon: "🚨", type: "systemic", title: "Functional Scoliosis Risk", text: "Loss of bilateral oblique balance causes one side to dominate, pulling the spine into a lateral curve that worsens with deconditioning." }
+      ]
+    ],
+    hotspot: { cx: 110, cy: 300, rx: 24, ry: 40 }
+  },
+
+  // BACK VIEW
+  trapezius: {
+    name: "Trapezius",
+    group: "Upper Back & Neck",
+    function: "Elevates, retracts, and rotates the shoulder blades. Supports the neck and connects the skull to the shoulder girdle.",
+    cascades: [
+      [{ icon: "✅", type: "local", title: "Proper Shoulder Blade Control", text: "Shoulder blades sit flat against the ribcage. Head and neck are supported without effort." }],
+      [
+        { icon: "⚠️", type: "local", title: "Chronic Neck & Shoulder Tension", text: "Upper trap becomes overworked and knotted, causing the classic 'tension headache' pattern into the back of the skull." }
+      ],
+      [
+        { icon: "↩️", type: "regional", title: "Shoulder Blade Winging", text: "Without middle and lower trap support, the shoulder blade lifts away from the ribcage — impairing all arm movements." },
+        { icon: "😬", type: "regional", title: "Cervicogenic Headaches", text: "Tight upper trap refers pain up the back of the skull, temples, and behind the eyes." }
+      ],
+      [
+        { icon: "🦴", type: "regional", title: "Cervical Disc Stress", text: "Loss of neck and shoulder support increases compressive load on the cervical vertebrae and discs." },
+        { icon: "🫁", type: "regional", title: "Restricted Breathing Pattern", text: "The trap assists in lifting the rib cage for breathing. Weakness reduces inspiratory capacity." }
+      ],
+      [
+        { icon: "🚨", type: "systemic", title: "Severe Posture Collapse", text: "Complete shoulder girdle instability. Unable to hold arms overhead. All reaching and carrying tasks are severely limited." }
+      ]
+    ],
+    hotspot: { cx: 170, cy: 145, rx: 60, ry: 40 }
+  },
+
+  erector_spinae: {
+    name: "Erector Spinae",
+    group: "Back (Paraspinals)",
+    function: "Extends and straightens the spine. Holds the body upright against gravity. Controls forward bending and protects lumbar discs.",
+    cascades: [
+      [{ icon: "✅", type: "local", title: "Upright Posture", text: "Standing tall is effortless. Forward bending is controlled and safe. Lumbar discs are protected." }],
+      [
+        { icon: "⚠️", type: "local", title: "Lumbar Fatigue & Ache", text: "The lower back fatigues quickly during standing or walking. A dull ache develops by late afternoon." },
+        { icon: "🔄", type: "regional", title: "Glutes & Hamstrings Compensate", text: "Posterior chain muscles try to assist with trunk extension, altering hip and knee mechanics." }
+      ],
+      [
+        { icon: "↩️", type: "local", title: "Increased Flexion Posture", text: "The person increasingly leans forward while walking, the classic stooped posture of ageing." },
+        { icon: "😬", type: "regional", title: "Lumbar Disc Herniation Risk", text: "Uncontrolled forward flexion with degenerated erectors places extreme pressure on posterior disc annulus." }
+      ],
+      [
+        { icon: "🦴", type: "regional", title: "One-Sided Degeneration → Scoliosis", text: "If one side weakens faster, the spine curves toward the weaker side. Early functional scoliosis develops." },
+        { icon: "⚖️", type: "regional", title: "Knee Overloading", text: "Stooped posture shifts body weight forward, increasing the compressive force on the knee joint during walking." }
+      ],
+      [
+        { icon: "🚨", type: "systemic", title: "Progressive Structural Scoliosis", text: "Sustained asymmetric spinal loading causes vertebral rotation and permanent lateral curvature. Rib cage distortion can impair lung function." },
+        { icon: "🧠", type: "systemic", title: "Balance & Brain Impact", text: "Chronic lateral body tilt disrupts vestibular signals and proprioception, impairing balance and increasing fall risk significantly." }
+      ]
+    ],
+    hotspot: { cx: 170, cy: 330, rx: 35, ry: 70 }
+  },
+
+  gluteus_maximus: {
+    name: "Gluteus Maximus",
+    group: "Glutes",
+    function: "The body's most powerful muscle. Extends the hip, stabilises the pelvis, and drives stair-climbing, rising from chairs, and walking uphill.",
+    cascades: [
+      [{ icon: "✅", type: "local", title: "Powerful Hip Extension", text: "Rising from chairs, stairs, and walking uphill are all strong and confident. Pelvis is stable." }],
+      [
+        { icon: "⚠️", type: "local", title: "Glute Amnesia", text: "The glute stops activating properly (often from prolonged sitting). The muscle is present but neurologically dormant." },
+        { icon: "🔄", type: "regional", title: "Hamstrings Overcompensate", text: "Hamstrings try to replace hip extension, becoming chronically tight and prone to strain." }
+      ],
+      [
+        { icon: "↩️", type: "regional", title: "Anterior Pelvic Tilt & Lower Back Pain", text: "Without glute support, the pelvis tips forward and the lower back overarches, causing chronic lumbar pain." },
+        { icon: "🦴", type: "regional", title: "Hip Joint Overload", text: "Without muscular protection, the hip joint itself absorbs impact forces, accelerating cartilage wear." }
+      ],
+      [
+        { icon: "⚖️", type: "regional", title: "Knee Valgus Collapse", text: "Loss of hip control allows the knee to cave inward (knock-knee) during every step, stressing knee ligaments and cartilage." },
+        { icon: "💥", type: "regional", title: "IT Band & Lateral Knee Pain", text: "TFL (a compensating hip muscle) over-tightens, pulling on the IT band and causing outer knee pain." }
+      ],
+      [
+        { icon: "🚨", type: "systemic", title: "Chair-Rise Independence Lost", text: "Without glutes, rising from chairs requires arm support. This is a major independence threshold in the elderly." },
+        { icon: "🦽", type: "systemic", title: "Hip Fracture Risk Rises", text: "Weak glutes = poor single-leg balance = inability to recover from stumbles = greatly elevated hip fracture risk." }
+      ]
+    ],
+    hotspot: { cx: 170, cy: 465, rx: 55, ry: 50 }
+  },
+
+  hamstrings: {
+    name: "Hamstrings",
+    group: "Upper Leg (Back)",
+    function: "Flexes the knee and extends the hip. Works eccentrically to control forward lean and slow the swing phase of walking.",
+    cascades: [
+      [{ icon: "✅", type: "local", title: "Controlled Knee Flexion", text: "Bending the knee, walking, and slowing down descents are smooth and pain-free." }],
+      [
+        { icon: "⚠️", type: "local", title: "Hamstring Tightness", text: "Pulling sensation at the back of the thigh. Forward bending becomes restricted. Lower back may feel pulled during bending." }
+      ],
+      [
+        { icon: "↩️", type: "regional", title: "Posterior Pelvic Tilt", text: "Tight hamstrings pull the bottom of the pelvis under (tucking), flattening the normal lumbar curve and straining lumbar discs." },
+        { icon: "🔄", type: "regional", title: "Knee Flexion Contracture", text: "The knee begins to remain in a slightly bent position even at rest, altering walking mechanics entirely." }
+      ],
+      [
+        { icon: "🦴", type: "regional", title: "Medial Knee Wear", text: "Altered knee positioning from hamstring tightness increases medial compartment compression and cartilage wear." }
+      ],
+      [
+        { icon: "🚨", type: "systemic", title: "Stooped Flexed Posture", text: "Combined hamstring and back stiffness creates a permanently flexed, stooped gait that is energy-inefficient and unstable." }
+      ]
+    ],
+    hotspot: { cx: 155, cy: 580, rx: 38, ry: 60 }
+  },
+
+  rhomboids: {
+    name: "Rhomboids",
+    group: "Upper Back",
+    function: "Retract the shoulder blades (pull them together). Counter-balance the chest muscles to maintain upright posture.",
+    cascades: [
+      [{ icon: "✅", type: "local", title: "Proper Shoulder Blade Retraction", text: "Shoulders sit back and down in proper alignment. Chest is open. Posture is upright." }],
+      [
+        { icon: "⚠️", type: "local", title: "Overstretched & Weak", text: "Tight pec and anterior deltoid dominance causes rhomboids to be chronically overstretched and fatigued." }
+      ],
+      [
+        { icon: "↩️", type: "regional", title: "Shoulder Blades Wing Out", text: "Shoulder blades protrude from the back as they can no longer be held flat. All shoulder movements become inefficient." },
+        { icon: "😬", type: "regional", title: "Mid-Back Aching Pain", text: "The rhomboid area chronically aches from being overstretched. Many seniors describe this as 'knots between the shoulder blades.'" }
+      ],
+      [
+        { icon: "🫁", type: "regional", title: "Compressed Chest Cavity", text: "Winging shoulder blades and forward shoulders reduce rib cage expansion, impairing breathing efficiency." }
+      ],
+      [
+        { icon: "🚨", type: "systemic", title: "Severe Kyphosis & Head Forward Posture", text: "Complete loss of upper back support. For every inch the head moves forward, neck strain increases by 10 lbs. Cognitive and breathing function decline." }
+      ]
+    ],
+    hotspot: { cx: 170, cy: 210, rx: 48, ry: 30 }
+  },
+
+  posterior_deltoid: {
+    name: "Posterior Deltoid",
+    group: "Shoulder (Back)",
+    function: "Extends and externally rotates the arm. Balances the front deltoid to keep the shoulder joint centred.",
+    cascades: [
+      [{ icon: "✅", type: "local", title: "Balanced Shoulder Joint", text: "Arm can move freely in all directions. Shoulder joint is centred and protected." }],
+      [{ icon: "⚠️", type: "local", title: "Weak Arm Extension", text: "Pushing open heavy doors, reaching behind the back, or tucking in a shirt become difficult." }],
+      [
+        { icon: "↩️", type: "regional", title: "Anterior Shoulder Dominance", text: "Front shoulder muscles dominate, pulling the humeral head forward in the socket, causing impingement." }
+      ],
+      [{ icon: "🦴", type: "regional", title: "Rotator Cuff Impingement", text: "Forward-displaced shoulder head pinches the rotator cuff tendons with every arm movement, causing pain and injury." }],
+      [{ icon: "🚨", type: "systemic", title: "Frozen Shoulder Risk", text: "Chronic pain and limited movement lead to adhesive capsulitis (frozen shoulder), severely restricting all arm use." }]
+    ],
+    hotspot: { cx: 95, cy: 195, rx: 28, ry: 22 }
+  },
+
+  triceps: {
+    name: "Triceps Brachii",
+    group: "Upper Arm (Back)",
+    function: "Extends the elbow (straightens the arm). Critical for pushing movements, rising from chairs using armrests, and overhead extension.",
+    cascades: [
+      [{ icon: "✅", type: "local", title: "Full Elbow Extension", text: "Pushing, pressing, and rising from chairs using arms is effortless." }],
+      [{ icon: "⚠️", type: "local", title: "Reduced Push Strength", text: "Pushing open heavy doors, getting up from low chairs using arm support, or pressing overhead become noticeably harder." }],
+      [
+        { icon: "↩️", type: "regional", title: "Chair Transfer Difficulty", text: "Unable to effectively use armrests to assist rising — a key safety mechanism in seniors with lower limb weakness." }
+      ],
+      [{ icon: "💥", type: "regional", title: "Elbow Joint Stress", text: "Compensatory elbow flexor dominance stresses the elbow joint and may cause medial elbow pain over time." }],
+      [{ icon: "🚨", type: "systemic", title: "Upper Limb Functional Loss", text: "Combined triceps and biceps weakness severely limits all arm-assisted mobility transfers and daily activity independence." }]
+    ],
+    hotspot: { cx: 95, cy: 280, rx: 20, ry: 38 }
+  },
+
+  gastrocnemius: {
+    name: "Gastrocnemius",
+    group: "Lower Leg (Back)",
+    function: "Plantarflexes the ankle (points the foot down) and assists knee flexion. The primary push-off muscle for walking and rising on toes.",
+    cascades: [
+      [{ icon: "✅", type: "local", title: "Strong Push-Off in Walking", text: "Each step has a powerful push-off phase. Can rise on toes easily. Ankle is stable and responsive." }],
+      [
+        { icon: "⚠️", type: "local", title: "Reduced Walk Speed & Push-Off", text: "Walking speed slows. The push-off phase of gait shortens. Climbing stairs or hills becomes effortful." }
+      ],
+      [
+        { icon: "↩️", type: "regional", title: "Knee Flexion Contracture Risk", text: "A shortened gastrocnemius pulls the knee into slight flexion, altering gait and loading the patellofemoral joint." },
+        { icon: "🦴", type: "regional", title: "Ankle & Achilles Stress", text: "Reduced muscle protection increases load on the Achilles tendon, raising risk of tendinopathy or rupture." }
+      ],
+      [
+        { icon: "⚖️", type: "regional", title: "Deep Vein Clot Risk Increases", text: "The gastrocnemius acts as a venous pump for the leg. Weakness reduces blood return from the lower leg, increasing DVT risk in seniors." }
+      ],
+      [
+        { icon: "🚨", type: "systemic", title: "Shuffling Gait Develops", text: "Loss of push-off leads to a flat-footed shuffling pattern — the most energy-inefficient and fall-prone way to walk." }
+      ]
+    ],
+    hotspot: { cx: 150, cy: 720, rx: 26, ry: 50 }
+  },
+
+  quadratus_lumborum: {
+    name: "Quadratus Lumborum (QL)",
+    group: "Lower Back (Deep)",
+    function: "Side-bends the trunk, stabilises the lumbar spine laterally, and elevates the hip. A deep lower back anchor muscle.",
+    cascades: [
+      [{ icon: "✅", type: "local", title: "Lateral Spine Stability", text: "The trunk is stable during side bending and single-leg activities. Hip height is symmetrical." }],
+      [
+        { icon: "⚠️", type: "local", title: "Unilateral Low Back Pain", text: "A deep aching or cramping pain on one side of the lower back, often worse in the morning or after sitting." }
+      ],
+      [
+        { icon: "↩️", type: "local", title: "Hip Hiking / Pelvis Tilt", text: "The affected side hip is pulled higher than the other, creating a visible pelvic imbalance and leg length discrepancy." },
+        { icon: "🔄", type: "regional", title: "Spinal Lateral Curve", text: "The trunk leans toward the tighter QL side. The spine begins to curve, mimicking scoliosis." }
+      ],
+      [
+        { icon: "🦴", type: "regional", title: "Lumbar Nerve Compression", text: "Lateral spinal compression from one-sided QL dominance can compress lumbar nerve roots, causing sciatica-like symptoms down the leg." },
+        { icon: "⚖️", type: "regional", title: "Knee Misalignment", text: "Pelvic tilt creates functional leg length difference, forcing one knee to absorb excess load and potentially causing medial knee arthritis." }
+      ],
+      [
+        { icon: "🚨", type: "systemic", title: "Full Scoliotic Posture + Brain Impact", text: "Severe one-sided QL dominance creates visible spinal scoliosis. The brain receives conflicting balance signals as the body tilts chronically to one side, impairing vestibular processing and increasing fall risk." }
+      ]
+    ],
+    hotspot: { cx: 200, cy: 340, rx: 22, ry: 35 }
+  },
+
+  latissimus_dorsi: {
+    name: "Latissimus Dorsi",
+    group: "Back (Lats)",
+    function: "Pulls the arm down and back, adducts and internally rotates the shoulder. The widest back muscle — key for pulling, climbing, and posture.",
+    cascades: [
+      [{ icon: "✅", type: "local", title: "Strong Pulling Function", text: "Can pull themselves up from a chair, row effectively, and keep the shoulder pulled down and back." }],
+      [{ icon: "⚠️", type: "local", title: "Reduced Pulling Strength", text: "Pulling open heavy doors, rising from a bath, or pulling oneself up using grab bars becomes much harder." }],
+      [
+        { icon: "↩️", type: "regional", title: "Shoulder Elevation & Neck Pain", text: "Upper trapezius compensates for lat weakness, causing the shoulders to ride up toward the ears and creating neck tension." }
+      ],
+      [
+        { icon: "🦴", type: "regional", title: "Thoracic Kyphosis Worsens", text: "Without lat stabilisation, the thoracic spine curves forward more aggressively in a hunched pattern." }
+      ],
+      [
+        { icon: "🚨", type: "systemic", title: "Grab Bar & Fall Safety Compromised", text: "Inability to effectively use grab bars in bathrooms or pull upright from a fall greatly increases injury severity from falls." }
+      ]
+    ],
+    hotspot: { cx: 115, cy: 280, rx: 32, ry: 50 }
+  }
+};
+
+const STAGES = [
+  { name: "Stage 0 — Healthy Muscle", color: "var(--healthy)", glowColor: "rgba(76,175,125,0.25)" },
+  { name: "Stage 1 — Mild Degeneration", color: "var(--mild)", glowColor: "rgba(245,200,66,0.3)" },
+  { name: "Stage 2 — Moderate Degeneration", color: "var(--moderate)", glowColor: "rgba(245,147,66,0.35)" },
+  { name: "Stage 3 — Severe Degeneration", color: "var(--severe)", glowColor: "rgba(224,92,58,0.4)" },
+  { name: "Stage 4 — Critical Degeneration", color: "var(--critical)", glowColor: "rgba(192,57,43,0.5)" }
+];
+
+let currentView = 'front';
+let currentMuscle = null;
+let currentStage = 0;
+
+function setView(view) {
+  currentView = view;
+  const img = document.getElementById('bodyImg');
+  const frontH = document.getElementById('frontHotspots');
+  const backH = document.getElementById('backHotspots');
+  const btns = document.querySelectorAll('.view-toggle button');
+
+  if (view === 'front') {
+    img.src = '/mnt/user-data/uploads/front_muscle_anatomy.png';
+    frontH.style.display = '';
+    backH.style.display = 'none';
+    btns[0].classList.add('active');
+    btns[1].classList.remove('active');
+  } else {
+    img.src = '/mnt/user-data/uploads/back_muscle_anatomy.png';
+    frontH.style.display = 'none';
+    backH.style.display = '';
+    btns[0].classList.remove('active');
+    btns[1].classList.add('active');
+  }
+
+  // Deselect muscle if it's not in this view
+  clearAllActive();
+  currentMuscle = null;
+  document.getElementById('welcomeCard').style.display = '';
+  document.getElementById('muscleDetail').classList.remove('visible');
+}
+
+function clearAllActive() {
+  document.querySelectorAll('.muscle-spot').forEach(s => {
+    s.setAttribute('fill', 'rgba(200,150,90,0)');
+    s.setAttribute('stroke', 'transparent');
+  });
+  const glow = document.getElementById('degenGlow');
+  glow.setAttribute('fill', 'rgba(200,80,40,0)');
+  document.getElementById('cascadeSpots').innerHTML = '';
+}
+
+document.querySelectorAll('.muscle-spot').forEach(spot => {
+  spot.addEventListener('click', function() {
+    const id = this.dataset.id;
+    const data = MUSCLE_DATA[id];
+    if (!data) return;
+
+    clearAllActive();
+    this.setAttribute('fill', 'rgba(200,150,90,0.3)');
+    this.setAttribute('stroke', '#c8965a');
+    this.setAttribute('stroke-width', '2');
+
+    currentMuscle = id;
+    currentStage = 0;
+    document.getElementById('degenSlider').value = 0;
+
+    document.getElementById('muscleName').textContent = data.name;
+    document.getElementById('muscleGroup').textContent = data.group;
+    document.getElementById('muscleFunction').textContent = data.function;
+
+    document.getElementById('welcomeCard').style.display = 'none';
+    document.getElementById('muscleDetail').classList.add('visible');
+
+    updateStageDisplay(0);
+    updateHotspotGlow(id, 0);
+  });
+
+  spot.addEventListener('mouseenter', function() {
+    if (this.getAttribute('stroke') !== '#c8965a') {
+      this.setAttribute('fill', 'rgba(200,150,90,0.15)');
+    }
+  });
+  spot.addEventListener('mouseleave', function() {
+    if (this.getAttribute('stroke') !== '#c8965a') {
+      this.setAttribute('fill', 'rgba(200,150,90,0)');
+    }
+  });
+});
+
+function onSliderChange(val) {
+  currentStage = parseInt(val);
+  updateStageDisplay(currentStage);
+  if (currentMuscle) updateHotspotGlow(currentMuscle, currentStage);
+}
+
+function updateStageDisplay(stage) {
+  const s = STAGES[stage];
+  document.getElementById('stageDot').style.background = s.color;
+  document.getElementById('stageName').textContent = s.name;
+
+  const data = MUSCLE_DATA[currentMuscle];
+  if (!data) return;
+
+  // Collect all effects up to and including this stage
+  let allEffects = [];
+  for (let i = 0; i <= stage; i++) {
+    allEffects = allEffects.concat(data.cascades[i]);
+  }
+
+  const timeline = document.getElementById('effectTimeline');
+  timeline.innerHTML = '';
+
+  allEffects.forEach((effect, idx) => {
+    const div = document.createElement('div');
+    div.className = 'effect-item';
+    div.innerHTML = `
+      <div class="effect-icon ${effect.type}">
+        <span style="font-size:1.1rem">${effect.icon}</span>
+      </div>
+      <div class="effect-text">
+        <strong>${effect.title}</strong>
+        <p>${effect.text}</p>
+      </div>
+    `;
+    timeline.appendChild(div);
+    setTimeout(() => div.classList.add('show'), idx * 80);
+  });
+}
+
+function updateHotspotGlow(muscleId, stage) {
+  const data = MUSCLE_DATA[muscleId];
+  if (!data || !data.hotspot) return;
+  const h = data.hotspot;
+  const glow = document.getElementById('degenGlow');
+
+  if (stage === 0) {
+    glow.setAttribute('fill', 'rgba(200,80,40,0)');
+    glow.setAttribute('cx', h.cx);
+    glow.setAttribute('cy', h.cy);
+    document.getElementById('cascadeSpots').innerHTML = '';
+    return;
+  }
+
+  const intensity = stage * 0.12;
+  glow.setAttribute('cx', h.cx);
+  glow.setAttribute('cy', h.cy);
+  glow.setAttribute('rx', h.rx * (1 + stage * 0.1));
+  glow.setAttribute('ry', h.ry * (1 + stage * 0.1));
+  glow.setAttribute('fill', `rgba(220,60,30,${intensity})`);
+
+  // Show cascade spots for higher stages
+  const cascadeEl = document.getElementById('cascadeSpots');
+  cascadeEl.innerHTML = '';
+
+  if (stage >= 2) {
+    // Show secondary affected areas based on muscle
+    const cascadeMap = {
+      erector_spinae: [{ cx: 170, cy: 560, rx: 40, ry: 30, label: 'Knee Load ↑' }],
+      quadratus_lumborum: [{ cx: 170, cy: 400, rx: 30, ry: 18, label: 'Pelvic Tilt' }, { cx: 155, cy: 560, rx: 28, ry: 22, label: 'Knee Stress' }],
+      iliopsoas: [{ cx: 170, cy: 330, rx: 25, ry: 20, label: 'Lumbar Compression' }],
+      gluteus_maximus: [{ cx: 155, cy: 560, rx: 35, ry: 28, label: 'Knee Valgus' }],
+      quadriceps: [{ cx: 170, cy: 465, rx: 30, ry: 22, label: 'Hip Overload' }],
+      hamstrings: [{ cx: 155, cy: 560, rx: 32, ry: 22, label: 'Knee Flexion' }],
+      trapezius: [{ cx: 170, cy: 100, rx: 22, ry: 14, label: 'Neck Stress' }],
+      pectoralis_major: [{ cx: 170, cy: 170, rx: 50, ry: 28, label: 'Kyphosis' }]
+    };
+
+    const spots = cascadeMap[muscleId] || [];
+    spots.forEach(s => {
+      const el = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+      el.setAttribute('cx', s.cx);
+      el.setAttribute('cy', s.cy);
+      el.setAttribute('rx', s.rx);
+      el.setAttribute('ry', s.ry);
+      el.setAttribute('fill', `rgba(245,140,50,${0.15 + stage * 0.07})`);
+      el.setAttribute('stroke', 'rgba(245,180,80,0.6)');
+      el.setAttribute('stroke-width', '1.5');
+      el.setAttribute('stroke-dasharray', '4,3');
+      cascadeEl.appendChild(el);
+
+      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      text.setAttribute('x', s.cx);
+      text.setAttribute('y', s.cy + s.ry + 12);
+      text.setAttribute('text-anchor', 'middle');
+      text.setAttribute('fill', 'rgba(245,200,100,0.9)');
+      text.setAttribute('font-size', '9');
+      text.setAttribute('font-family', 'DM Sans, sans-serif');
+      text.textContent = s.label;
+      cascadeEl.appendChild(text);
+    });
+  }
+}
+</script>
+
+</body>
+</html>
